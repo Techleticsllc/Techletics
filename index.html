@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <!-- ===== PRELOADER ===== -->
     <div class="preloader" id="preloader" aria-hidden="true">
         <div class="preloader__mark">
@@ -233,42 +232,43 @@
 
         <!-- ===== FAQ ===== -->
         <section class="faq" id="faq">
-            <div class="container container--narrow">
-                <span class="section-tag">FAQ</span>
-                <h2 class="section-title">Got questions?</h2>
-                
+            <div class="container">
+                <span class="section-tag">QUESTIONS</span>
+                <h2 class="section-title">Frequently asked</h2>
+
                 <div class="faq__list">
-                    <div class="faq__item">
-                        <h3 class="faq__question">How does the ball charge?</h3>
-                        <p class="faq__answer">
-                            Every Techletics ball comes with a custom wireless charging cradle. Just set the ball on the cradle between sessions. A full charge takes about an hour.
-                        </p>
-                    </div>
-                    <div class="faq__item">
-                        <h3 class="faq__question">Does it change the weight or balance?</h3>
-                        <p class="faq__answer">
-                            No. The sensor assembly is suspended precisely at the center of mass inside the bladder and weighs exactly what the displaced air/bladder material would. It meets official weight, size, and balance specifications.
-                        </p>
-                    </div>
-                    <div class="faq__item">
-                        <h3 class="faq__question">Do I need my phone on the field?</h3>
-                        <p class="faq__answer">
-                            Not necessarily. The ball has internal memory that can store up to 500 throws offline. It will automatically dump and sync the data to your app the next time it connects via Bluetooth.
-                        </p>
-                    </div>
+                    <details class="faq__item" open>
+                        <summary class="faq__question">Does it feel different from a normal ball?</summary>
+                        <div class="faq__answer">
+                            <p>No. The sensor core is potted into the bladder during manufacturing, so weight, balance, and grip stay within regulation tolerances. Most players can't tell the difference in a blind test.</p>
+                        </div>
+                    </details>
+                    <details class="faq__item">
+                        <summary class="faq__question">Which sports is Techletics built for?</summary>
+                        <div class="faq__answer">
+                            <p>The Gen 2 ball ships in football, basketball, and soccer builds. Firmware and app metrics are tuned per sport, so a spiral spin reading and a shot arc reading are both accurate out of the box.</p>
+                        </div>
+                    </details>
+                    <details class="faq__item">
+                        <summary class="faq__question">How long does the battery last?</summary>
+                        <div class="faq__answer">
+                            <p>Around 18 hours of active tracking on a full charge. The ball sleeps automatically when it's still, so it won't drain in your gym bag.</p>
+                        </div>
+                    </details>
                 </div>
             </div>
         </section>
 
-        <!-- ===== CONTACT ===== -->
+        <!-- ===== CONTACT / FOOTER ===== -->
         <section class="contact" id="contact">
-            <div class="container container--narrow">
-                <span class="section-tag">CONTACT</span>
-                <h2 class="section-title">Let's talk.</h2>
-                <p class="section-subtitle">
-                    For hardware partnerships, developer inquiries, or general questions, drop us a line.
-                </p>
-                <a href="mailto:team@techletics.com" class="contact__email">team@techletics.com</a>
+            <div class="container contact__inner">
+                <h2 class="contact__title">Get updates on Techletics.</h2>
+                <p class="contact__desc">Join our newsletter to stay updated on product drops, software features, and beta testing development.</p>
+                
+                <form class="contact__form" onsubmit="event.preventDefault(); alert('Thanks for subscribing!');">
+                    <input type="email" placeholder="Enter your email address" class="contact__input" required aria-label="Email address">
+                    <button type="submit" class="btn btn--primary btn--magnetic">Subscribe</button>
+                </form>
             </div>
         </section>
     </main>
