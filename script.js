@@ -430,55 +430,65 @@ function createBallTextures() {
   bctx.fillText("YOUR GAME, UPGRADED", size * 0.5, size * 0.3 + 55);
   bctx.restore();
 
-    function drawSeams(ctx, glow) {
-      ctx.save();
-      ctx.lineWidth = size * 0.009;
-      ctx.lineCap = "round";
-      if (glow) {
-        const grad = ctx.createLinearGradient(0, 0, size, size);
-        grad.addColorStop(0, "#FF5B2E");
-        grad.addColorStop(1, "#00E5FF");
-        ctx.strokeStyle = grad;
-        ctx.shadowColor = "#FF8A5C";
-        ctx.shadowBlur = size * 0.018;
-      } else {
-        ctx.strokeStyle = "rgba(255,255,255,0.14)";
-      }
-      ctx.beginPath();
-      ctx.moveTo(size / 2, 0);
-      ctx.lineTo(size / 2, size);
-      ctx.stroke();
+   // 3. Emissive Glow Canvas Setup
+  const emissive = document.createElement("canvas");
+  emissive.width = emissive.height = size;
+  const ectx = emissive.getContext("2d");
+  ectx.fillStyle = "#000000";
+  ectx.fillRect(0, 0, size, size);
 
-      ctx.beginPath();
-      ctx.moveTo(0, size / 2);
-      ctx.lineTo(size, size / 2);
-      ctx.stroke();
+  // 4. Emissive Text Overlay (Forces orange text to show through 3D lighting)
+  ectx.save();
+  ectx.textAlign = "center";
+  ectx.textBaseline = "middle";
+  ectx.fillStyle = "#FF5B2E";
+  ectx.font = "bold 56px 'Space Grotesk', sans-serif";
+  ectx.fillText("TECHLETICS", size * 0.5, size * 0.3);
 
-      ctx.beginPath();
-      ctx.moveTo(size * 0.14, 0);
-      ctx.quadraticCurveTo(size * 0.36, size / 2, size * 0.14, size);
-      ctx.stroke();
+  ectx.font = "600 22px 'Inter', sans-serif";
+  ectx.fillText("YOUR GAME, UPGRADED", size * 0.5, size * 0.3 + 55);
+  ectx.restore();
 
-      ctx.beginPath();
-      ctx.moveTo(size * 0.86, 0);
-      ctx.quadraticCurveTo(size * 0.64, size / 2, size * 0.86, size);
-      ctx.stroke();
-      ctx.restore();
+  // 5. Seams Generation
+  function drawSeams(ctx, glow) {
+    ctx.save();
+    ctx.lineWidth = size * 0.009;
+    ctx.lineCap = "round";
+    if (glow) {
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, "#FF5B2E");
+      grad.addColorStop(1, "#00E5FF");
+      ctx.strokeStyle = grad;
+      ctx.shadowColor = "#FF8A5C";
+      ctx.shadowBlur = size * 0.018;
+    } else {
+      ctx.strokeStyle = "rgba(255,255,255,0.14)";
     }
+    ctx.beginPath();
+    ctx.moveTo(size / 2, 0);
+    ctx.lineTo(size / 2, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, size / 2);
+    ctx.lineTo(size, size / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.14, 0);
+    ctx.quadraticCurveTo(size * 0.36, size / 2, size * 0.14, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.86, 0);
+    ctx.quadraticCurveTo(size * 0.64, size / 2, size * 0.86, size);
+    ctx.stroke();
+    ctx.restore();
 
-    drawSeams(bctx, false);
-    drawSeams(ectx, true);
+  drawSeams(bctx, false);
+  drawSeams(ectx, true);
 
-    const baseTex = new THREE.CanvasTexture(base);
-    const emissiveTex = new THREE.CanvasTexture(emissive);
-    return { baseTex, emissiveTex };
-  }
-
-  function initBallScene(canvas, opts) {
-    if (!canvas || !hasThree) return null;
-
-    const options = Object.assign(
-      { particles: false, interactive: false, autoRotateSpeed: 1 },
+  const baseTex = new THREE.CanvasTexture(base);
+  const emissiveTex = new THREE.CanvasTexture(emissive);
+  return { baseTex, emissiveTex };
+}
       opts
     );
 
