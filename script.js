@@ -401,20 +401,24 @@
      Three.js — smart ball scenes
      ============================================================ */
   function createBallTextures() {
-    const size = 1024;
+  const size = 1024;
+  const base = document.createElement("canvas");
+  base.width = base.height = size;
+  const bctx = base.getContext("2d");
+  
+  // 1. Create and fill the background gradient first
+  const bg = bctx.createRadialGradient(
+    size * 0.35, size * 0.28, size * 0.05,
+    size * 0.5, size * 0.5, size * 0.78
+  );
+  bg.addColorStop(0, "#3d3d44");
+  bg.addColorStop(0.55, "#18181c");
+  bg.addColorStop(1, "#050506");
+  
+  bctx.fillStyle = bg;
+  bctx.fillRect(0, 0, size, size);
 
-    const base = document.createElement("canvas");
-    base.width = base.height = size;
-    const bctx = base.getContext("2d");
-    const bg = bctx.createRadialGradient(
-      size * 0.35, size * 0.28, size * 0.05,
-      size * 0.5, size * 0.5, size * 0.78
-    );
-    bg.addColorStop(0, "#3d3d44");
-    bg.addColorStop(0.55, "#18181c");
-    bg.addColorStop(1, "#050506");
-    bctx.fillStyle = bg;
-    // --- Bake Branding Into Ball Texture ---
+  // 2. NOW paste the branding layer perfectly on top
   bctx.save();
   bctx.textAlign = "center";
   bctx.textBaseline = "middle";
