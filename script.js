@@ -400,13 +400,13 @@
   /* ============================================================
      Three.js — smart ball scenes
      ============================================================ */
-  function createBallTextures() {
+function createBallTextures() {
   const size = 1024;
   const base = document.createElement("canvas");
   base.width = base.height = size;
   const bctx = base.getContext("2d");
   
-  // 1. Create and fill the background gradient first
+  // 1. Base Dark Background Gradient
   const bg = bctx.createRadialGradient(
     size * 0.35, size * 0.28, size * 0.05,
     size * 0.5, size * 0.5, size * 0.78
@@ -418,26 +418,17 @@
   bctx.fillStyle = bg;
   bctx.fillRect(0, 0, size, size);
 
-  // 2. NOW paste the branding layer perfectly on top
+  // 2. Base Text Overlay
   bctx.save();
   bctx.textAlign = "center";
   bctx.textBaseline = "middle";
-  
-  // TECHLETICS Heading (Vibrant Orange)
   bctx.fillStyle = "#FF5B2E"; 
   bctx.font = "bold 56px 'Space Grotesk', sans-serif";
   bctx.fillText("TECHLETICS", size * 0.5, size * 0.3);
 
-  // Slogan (Vibrant Orange)
-  bctx.fillStyle = "#FF5B2E";
   bctx.font = "600 22px 'Inter', sans-serif";
   bctx.fillText("YOUR GAME, UPGRADED", size * 0.5, size * 0.3 + 55);
   bctx.restore();
-    const emissive = document.createElement("canvas");
-    emissive.width = emissive.height = size;
-    const ectx = emissive.getContext("2d");
-    ectx.fillStyle = "#000000";
-    ectx.fillRect(0, 0, size, size);
 
     function drawSeams(ctx, glow) {
       ctx.save();
