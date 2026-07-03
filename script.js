@@ -414,8 +414,21 @@
     bg.addColorStop(0.55, "#18181c");
     bg.addColorStop(1, "#050506");
     bctx.fillStyle = bg;
-    bctx.fillRect(0, 0, size, size);
+    // --- Bake Branding Into Ball Texture ---
+  bctx.save();
+  bctx.textAlign = "center";
+  bctx.textBaseline = "middle";
+  
+  // TECHLETICS Heading (Vibrant Orange)
+  bctx.fillStyle = "#FF5B2E"; 
+  bctx.font = "bold 56px 'Space Grotesk', sans-serif";
+  bctx.fillText("TECHLETICS", size * 0.5, size * 0.3);
 
+  // Slogan (Vibrant Orange)
+  bctx.fillStyle = "#FF5B2E";
+  bctx.font = "600 22px 'Inter', sans-serif";
+  bctx.fillText("YOUR GAME, UPGRADED", size * 0.5, size * 0.3 + 55);
+  bctx.restore();
     const emissive = document.createElement("canvas");
     emissive.width = emissive.height = size;
     const ectx = emissive.getContext("2d");
