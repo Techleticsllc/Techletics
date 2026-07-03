@@ -462,13 +462,16 @@ function createBallTextures() {
       ctx.shadowColor = "#FF8A5C";
       ctx.shadowBlur = size * 0.018;
     } else {
-      ctx.strokeStyle = "rgba(255,255,255,0.14)";
-    }
-    ctx.beginPath();
-    ctx.moveTo(size / 2, 0);
-    ctx.lineTo(size / 2, size);
-    ctx.stroke();
-    ctx.beginPath();
+     ctx.restore();
+  }
+
+  drawSeams(bctx, false);
+  drawSeams(ectx, true);
+
+  const baseTex = new THREE.CanvasTexture(base);
+  const emissiveTex = new THREE.CanvasTexture(emissive);
+  return { baseTex, emissiveTex };
+}
     ctx.moveTo(0, size / 2);
     ctx.lineTo(size, size / 2);
     ctx.stroke();
