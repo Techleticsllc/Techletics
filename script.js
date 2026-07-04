@@ -360,31 +360,54 @@
   }
   initTilt();
 
-  /* ============================================================
-     Three.js Engine Integration
+ /* ============================================================
+     Three.js Engine Integration (Bulletproof Version)
      ============================================================ */
   function initThreeDScenes() {
+    // Check if Three.js is actually loaded in the browser first
+    if (typeof THREE === 'undefined') {
+      console.error("Three.js failed to load from the CDN.");
+      return;
+    }
+
     const textureLoader = new THREE.TextureLoader();
-    const ballGraphic = textureLoader.load('BEC70532-6ACA-4C33-A074-09634343F514 (1).JPG');
+    let ballGraphic = null;
+
+    // Safely attempt to load the texture
+    try {
+      ballGraphic = textureLoader.load(
+        'BEC70532-6ACA-4C33-A074-09634343F514 (1).JPG',
+        () => console.log("Texture loaded successfully!"),
+        undefined,
+        (err) => console.warn("Texture failed to load. Using procedural fallback color.", err)
+      );
+    } catch (e) {
+      console.warn("Texture loading thrown error, bypassing:", e);
+    }
 
     // Procedural micro-pebbled leather texture mapping generator
     const generateLeatherBump = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512; canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#808080';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < 35000; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#3a3a3a';
-        ctx.fillRect(x, y, 1, 1);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#808080';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < 35000; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#3a3a3a';
+          ctx.fillRect(x, y, 1, 1);
+        }
+        const bumpTex = new THREE.CanvasTexture(canvas);
+        bumpTex.wrapS = THREE.RepeatWrapping;
+        bumpTex.wrapT = THREE.RepeatWrapping;
+        bumpTex.repeat.set(6, 3);
+        return bumpTex;
+      } catch (e) {
+        console.error("Failed to generate bump map:", e);
+        return null;
       }
-      const bumpTex = new THREE.CanvasTexture(canvas);
-      bumpTex.wrapS = THREE.RepeatWrapping;
-      bumpTex.wrapT = THREE.RepeatWrapping;
-      bumpTex.repeat.set(6, 3);
-      return bumpTex;
     };
 
     const sharedBump = generateLeatherBump();
@@ -394,39 +417,48 @@
       if (!canvas) return null;
 
       const parent = canvas.parentElement;
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(40, parent.clientWidth / parent.clientHeight, 0.1, 100);
-      camera.position.z = 7;
+      if (!parent || parent.clientWidth === 0 || parent.clientHeight === 0) {
+        console.warn(`Canvas parent for #${canvasId} has 0 width or height. Check layout spacing.`);
+      }
 
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-      renderer.setSize(parent.clientWidth, parent.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      try {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(40, parent.clientWidth / (parent.clientHeight || 1), 0.1, 100);
+        camera.position.z = 7;
 
-      // Dual Studio Lighting setups for leather depth highlights
-      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-      const keyLight = new THREE.DirectionalLight(0xffffff, 0.85);
-      keyLight.position.set(6, 5, 4);
-      scene.add(keyLight);
-      const fillLight = new THREE.DirectionalLight(0x3b5998, 0.4);
-      fillLight.position.set(-6, -3, 2);
-      scene.add(fillLight);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        renderer.setSize(parent.clientWidth, parent.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-      const geometry = new THREE.SphereGeometry(2.1 * scaleFactor, 64, 64);
-      const material = new THREE.MeshStandardMaterial({
-        color: 0x22427c,
-        map: ballGraphic,
-        bumpMap: sharedBump,
-        bumpScale: 0.012,
-        roughness: 0.55,
-        metalness: 0.05
-      });
+        // Dual Studio Lighting setups for leather depth highlights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        keyLight.position.set(6, 5, 4);
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0x3b5998, 0.5);
+        fillLight.position.set(-6, -3, 2);
+        scene.add(fillLight);
 
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.rotation.x = 0.25;
-      mesh.rotation.z = -0.05;
-      scene.add(mesh);
+        const geometry = new THREE.SphereGeometry(2.1 * scaleFactor, 64, 64);
+        const material = new THREE.MeshStandardMaterial({
+          color: 0x1a365d, // Deep premium athletic blue base color fallback
+          map: ballGraphic,
+          bumpMap: sharedBump,
+          bumpScale: 0.015,
+          roughness: 0.6,
+          metalness: 0.1
+        });
 
-      return { scene, camera, renderer, mesh, parent };
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotation.x = 0.25;
+        mesh.rotation.z = -0.05;
+        scene.add(mesh);
+
+        return { scene, camera, renderer, mesh, parent };
+      } catch (err) {
+        console.error(`Error configuring Three.js instance for #${canvasId}:`, err);
+        return null;
+      }
     }
 
     const instances = [
@@ -434,29 +466,37 @@
       setupInstance('productCanvas', 0.9)
     ].filter(Boolean);
 
+    if (instances.length === 0) {
+      console.warn("No valid 3D canvas elements initialized.");
+      return;
+    }
+
     function animate() {
       requestAnimationFrame(animate);
       instances.forEach(inst => {
-        inst.mesh.rotation.y += prefersReducedMotion ? 0 : 0.0035; // Fine-grained slow rotation loop
-        inst.renderer.render(inst.scene, inst.camera);
+        if (inst.mesh) {
+          inst.mesh.rotation.y += prefersReducedMotion ? 0 : 0.0035;
+        }
+        if (inst.renderer && inst.scene && inst.camera) {
+          inst.renderer.render(inst.scene, inst.camera);
+        }
       });
     }
     animate();
 
     window.addEventListener('resize', () => {
       instances.forEach(inst => {
-        inst.camera.aspect = inst.parent.clientWidth / inst.parent.clientHeight;
+        if (!inst.parent || !inst.camera || !inst.renderer) return;
+        inst.camera.aspect = inst.parent.clientWidth / (inst.parent.clientHeight || 1);
         inst.camera.updateProjectionMatrix();
         inst.renderer.setSize(inst.parent.clientWidth, inst.parent.clientHeight);
       });
     });
   }
 
-  // Bind 3D viewports right into execution pipeline
+  // Bind 3D viewports directly into your execution pipeline
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', initThreeDScenes);
   } else {
     initThreeDScenes();
   }
-
-})();
