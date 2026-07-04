@@ -26,7 +26,6 @@
     setTimeout(hidePreloaderAndStart, 320);
   });
 
-  // Safety net: guarantees the page reveals itself no matter what.
   setTimeout(() => {
     if (preloader && !preloader.classList.contains("is-hidden")) hidePreloaderAndStart();
   }, 2200);
@@ -76,7 +75,7 @@
   }
 
   /* ============================================================
-     Hero parallax (waves, grid, telemetry) — plain scroll listener
+     Hero parallax (waves, grid, telemetry)
      ============================================================ */
   function initHeroParallax() {
     if (prefersReducedMotion) return;
@@ -150,7 +149,7 @@
   }
 
   /* ============================================================
-     Animated counters (telemetry + stat chips)
+     Animated counters
      ============================================================ */
   let countersPlayed = false;
 
@@ -324,7 +323,7 @@
   initCursorGlow();
 
   /* ============================================================
-     Magnetic buttons — CSS transition handles the easing
+     Magnetic buttons
      ============================================================ */
   function initMagneticButtons() {
     if (isTouch) return;
@@ -343,7 +342,7 @@
   initMagneticButtons();
 
   /* ============================================================
-     3D tilt on glass cards — CSS transition handles the easing
+     3D tilt on glass cards
      ============================================================ */
   function initTilt() {
     if (isTouch) return;
@@ -360,4 +359,104 @@
     });
   }
   initTilt();
+
+  /* ============================================================
+     Three.js Engine Integration
+     ============================================================ */
+  function initThreeDScenes() {
+    const textureLoader = new THREE.TextureLoader();
+    const ballGraphic = textureLoader.load('BEC70532-6ACA-4C33-A074-09634343F514 (1).JPG');
+
+    // Procedural micro-pebbled leather texture mapping generator
+    const generateLeatherBump = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 35000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#3a3a3a';
+        ctx.fillRect(x, y, 1, 1);
+      }
+      const bumpTex = new THREE.CanvasTexture(canvas);
+      bumpTex.wrapS = THREE.RepeatWrapping;
+      bumpTex.wrapT = THREE.RepeatWrapping;
+      bumpTex.repeat.set(6, 3);
+      return bumpTex;
+    };
+
+    const sharedBump = generateLeatherBump();
+
+    function setupInstance(canvasId, scaleFactor) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+
+      const parent = canvas.parentElement;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, parent.clientWidth / parent.clientHeight, 0.1, 100);
+      camera.position.z = 7;
+
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      renderer.setSize(parent.clientWidth, parent.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Dual Studio Lighting setups for leather depth highlights
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      keyLight.position.set(6, 5, 4);
+      scene.add(keyLight);
+      const fillLight = new THREE.DirectionalLight(0x3b5998, 0.4);
+      fillLight.position.set(-6, -3, 2);
+      scene.add(fillLight);
+
+      const geometry = new THREE.SphereGeometry(2.1 * scaleFactor, 64, 64);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x22427c,
+        map: ballGraphic,
+        bumpMap: sharedBump,
+        bumpScale: 0.012,
+        roughness: 0.55,
+        metalness: 0.05
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = 0.25;
+      mesh.rotation.z = -0.05;
+      scene.add(mesh);
+
+      return { scene, camera, renderer, mesh, parent };
+    }
+
+    const instances = [
+      setupInstance('heroCanvas', 1.1),
+      setupInstance('productCanvas', 0.9)
+    ].filter(Boolean);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      instances.forEach(inst => {
+        inst.mesh.rotation.y += prefersReducedMotion ? 0 : 0.0035; // Fine-grained slow rotation loop
+        inst.renderer.render(inst.scene, inst.camera);
+      });
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      instances.forEach(inst => {
+        inst.camera.aspect = inst.parent.clientWidth / inst.parent.clientHeight;
+        inst.camera.updateProjectionMatrix();
+        inst.renderer.setSize(inst.parent.clientWidth, inst.parent.clientHeight);
+      });
+    });
+  }
+
+  // Bind 3D viewports right into execution pipeline
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initThreeDScenes);
+  } else {
+    initThreeDScenes();
+  }
+
 })();
