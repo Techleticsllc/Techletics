@@ -8,13 +8,19 @@
   const isTouch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
   /* ============================================================
-     Preloader (pure CSS/JS — no external dependency)
+     Preloader Management
      ============================================================ */
   const preloader = document.getElementById("preloader");
   const preloaderFill = document.getElementById("preloaderFill");
 
   function hidePreloaderAndStart() {
-    if (preloader) preloader.classList.add("is-hidden");
+    if (preloader) {
+      preloader.style.opacity = "0";
+      preloader.style.pointerEvents = "none";
+      setTimeout(() => {
+        preloader.style.display = "none";
+      }, 500);
+    }
     document.body.classList.add("is-loaded");
     playHeroIntro();
   }
@@ -23,38 +29,36 @@
 
   window.addEventListener("load", () => {
     if (preloaderFill) preloaderFill.style.width = "100%";
-    setTimeout(hidePreloaderAndStart, 320);
+    setTimeout(hidePreloaderAndStart, 300);
   });
 
+  // Safeguard: Force close preloader if loading takes too long
   setTimeout(() => {
-    if (preloader && !preloader.classList.contains("is-hidden")) hidePreloaderAndStart();
-  }, 2200);
+    if (preloader && preloader.style.display !== "none") {
+      console.warn("Preloader timeout reached. Forcing page display.");
+      hidePreloaderAndStart();
+    }
+  }, 2000);
 
   /* ============================================================
-     Hero intro — staggered CSS-transition reveal
+     Hero Intro & Reveal Animations
      ============================================================ */
   function playHeroIntro() {
     const lines = document.querySelectorAll(".reveal-line > span");
     lines.forEach((el, i) => {
-      el.style.transitionDelay = `${i * 0.12}s`;
-      requestAnimationFrame(() => (el.style.transform = "translateY(0%)"));
+      el.style.transform = "translateY(0%)";
     });
 
     const heroBits = document.querySelectorAll("[data-hero-reveal]");
-    heroBits.forEach((el, i) => {
-      el.style.transitionDelay = `${0.35 + i * 0.12}s`;
-      requestAnimationFrame(() => el.classList.add("is-visible"));
+    heroBits.forEach((el) => {
+      el.classList.add("is-visible");
     });
 
     initScrollReveal();
   }
 
-  /* ============================================================
-     Scroll-triggered reveal for everything else
-     ============================================================ */
   function initScrollReveal() {
     const targets = document.querySelectorAll("[data-reveal]");
-
     if (!("IntersectionObserver" in window)) {
       targets.forEach((el) => el.classList.add("is-visible"));
       return;
@@ -69,434 +73,174 @@
           }
         });
       },
-      { threshold: 0.15, rootMargin: "0px 0px -60px 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
     );
     targets.forEach((el) => observer.observe(el));
   }
 
   /* ============================================================
-     Hero parallax (waves, grid, telemetry)
-     ============================================================ */
-  function initHeroParallax() {
-    if (prefersReducedMotion) return;
-
-    const hero = document.querySelector(".hero");
-    const wave1 = document.querySelector(".wave--1");
-    const wave2 = document.querySelector(".wave--2");
-    const wave3 = document.querySelector(".wave--3");
-    const grid = document.querySelector(".hero__grid");
-    const telemetryLayer = document.querySelector(".telemetry-layer");
-    if (!hero) return;
-
-    let ticking = false;
-
-    function update() {
-      ticking = false;
-      const heroHeight = hero.offsetHeight || 1;
-      const progress = Math.min(Math.max(window.scrollY / heroHeight, 0), 1);
-
-      if (wave1) wave1.style.transform = `translateY(${progress * 140}px)`;
-      if (wave2) wave2.style.transform = `translateY(${progress * -100}px)`;
-      if (wave3) wave3.style.transform = `translate(${progress * -40}px, ${progress * 80}px)`;
-      if (grid) grid.style.opacity = String(1 - progress * 0.8);
-
-      if (telemetryLayer) {
-        const t = Math.max(0, (progress - 0.55) / 0.45);
-        telemetryLayer.style.transform = `translateY(${t * -60}px)`;
-        telemetryLayer.style.opacity = String(1 - t);
-      }
-    }
-
-    window.addEventListener(
-      "scroll",
-      () => {
-        if (!ticking) {
-          requestAnimationFrame(update);
-          ticking = true;
-        }
-      },
-      { passive: true }
-    );
-    update();
-  }
-  initHeroParallax();
-
-  /* ============================================================
-     Nav: scroll shadow + mobile toggle
+     UI Component Interactions (Nav, Accoridion, Form)
      ============================================================ */
   const nav = document.getElementById("nav");
   const navToggle = document.getElementById("navToggle");
   const navLinks = document.getElementById("navLinks");
 
-  const onScroll = () => {
-    if (nav) nav.classList.toggle("is-scrolled", window.scrollY > 8);
-  };
-  onScroll();
-  window.addEventListener("scroll", onScroll, { passive: true });
+  if (nav) {
+    window.addEventListener("scroll", () => {
+      nav.classList.toggle("is-scrolled", window.scrollY > 10);
+    }, { passive: true });
+  }
 
-  if (navToggle) {
+  if (navToggle && nav) {
     navToggle.addEventListener("click", () => {
-      const isOpen = nav.classList.toggle("is-open");
-      navToggle.setAttribute("aria-expanded", String(isOpen));
-    });
-
-    navLinks.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        nav.classList.remove("is-open");
-        navToggle.setAttribute("aria-expanded", "false");
-      });
+      nav.classList.toggle("is-open");
     });
   }
 
-  /* ============================================================
-     Animated counters
-     ============================================================ */
-  let countersPlayed = false;
-
-  function animateCounters() {
-    if (countersPlayed) return;
-    countersPlayed = true;
-
-    document.querySelectorAll("[data-count]").forEach((el) => {
-      const target = parseFloat(el.getAttribute("data-count"));
-      const duration = 1300;
-      const start = performance.now();
-
-      function tick(now) {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const value = Math.round(target * eased);
-        el.textContent = value.toLocaleString();
-        if (progress < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    });
-  }
-
-  if ("IntersectionObserver" in window) {
-    const counterObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            animateCounters();
-            counterObserver.disconnect();
-          }
-        });
-      },
-      { threshold: 0.4 }
-    );
-    const heroSection = document.querySelector(".hero");
-    if (heroSection) counterObserver.observe(heroSection);
-  } else {
-    animateCounters();
-  }
-
-  /* ============================================================
-     FAQ accordion
-     ============================================================ */
-  const accordionItems = document.querySelectorAll(".accordion__item");
-
-  accordionItems.forEach((item) => {
-    const trigger = item.querySelector(".accordion__trigger");
-    const panel = item.querySelector(".accordion__panel");
-
+  document.querySelectorAll(".accordion__trigger").forEach((trigger) => {
     trigger.addEventListener("click", () => {
+      const item = trigger.closest(".accordion__item");
+      const panel = item.querySelector(".accordion__panel");
       const isOpen = trigger.getAttribute("aria-expanded") === "true";
-
-      accordionItems.forEach((other) => {
-        if (other === item) return;
-        const otherTrigger = other.querySelector(".accordion__trigger");
-        const otherPanel = other.querySelector(".accordion__panel");
-        otherTrigger.setAttribute("aria-expanded", "false");
-        otherPanel.style.maxHeight = null;
-      });
-
-      trigger.setAttribute("aria-expanded", String(!isOpen));
-      panel.style.maxHeight = isOpen ? null : panel.scrollHeight + "px";
+      
+      trigger.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+      panel.style.maxHeight = !isOpen ? panel.scrollHeight + "px" : null;
     });
   });
 
   /* ============================================================
-     Contact form validation
-     ============================================================ */
-  const form = document.getElementById("contactForm");
-  const successMsg = document.getElementById("formSuccess");
-
-  function setError(fieldName, message) {
-    const field = form.querySelector(`[name="${fieldName}"]`);
-    const errorEl = form.querySelector(`[data-error-for="${fieldName}"]`);
-    const wrapper = field ? field.closest(".form__field") : null;
-
-    if (errorEl) errorEl.textContent = message || "";
-    if (wrapper) wrapper.classList.toggle("has-error", Boolean(message));
-  }
-
-  function isValidEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
-
-  function validateForm() {
-    let valid = true;
-
-    const name = form.name.value.trim();
-    if (!name) {
-      setError("name", "Please enter your name.");
-      valid = false;
-    } else setError("name", "");
-
-    const email = form.email.value.trim();
-    if (!email) {
-      setError("email", "Please enter your email.");
-      valid = false;
-    } else if (!isValidEmail(email)) {
-      setError("email", "Please enter a valid email address.");
-      valid = false;
-    } else setError("email", "");
-
-    const sport = form.sport.value;
-    if (!sport) {
-      setError("sport", "Please choose a sport.");
-      valid = false;
-    } else setError("sport", "");
-
-    return valid;
-  }
-
-  if (form) {
-    ["name", "email", "sport"].forEach((fieldName) => {
-      const field = form.querySelector(`[name="${fieldName}"]`);
-      if (field) {
-        field.addEventListener("input", () => setError(fieldName, ""));
-        field.addEventListener("change", () => setError(fieldName, ""));
-      }
-    });
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      successMsg.classList.remove("is-visible");
-      if (!validateForm()) return;
-
-      const submitBtn = form.querySelector(".form__submit");
-      const submitText = form.querySelector(".form__submit-text");
-      const originalText = submitText.textContent;
-
-      submitBtn.disabled = true;
-      submitText.textContent = "Sending...";
-
-      setTimeout(() => {
-        submitBtn.disabled = false;
-        submitText.textContent = originalText;
-        successMsg.classList.add("is-visible");
-        form.reset();
-      }, 700);
-    });
-  }
-
-  /* ============================================================
-     Cursor glow (desktop only)
-     ============================================================ */
-  function initCursorGlow() {
-    if (isTouch) return;
-    const glow = document.getElementById("cursorGlow");
-    if (!glow) return;
-
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let x = mouseX;
-    let y = mouseY;
-
-    window.addEventListener("mousemove", (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      glow.classList.add("is-active");
-    });
-
-    function loop() {
-      x += (mouseX - x) * 0.14;
-      y += (mouseY - y) * 0.14;
-      glow.style.left = x + "px";
-      glow.style.top = y + "px";
-      requestAnimationFrame(loop);
-    }
-    loop();
-  }
-  initCursorGlow();
-
-  /* ============================================================
-     Magnetic buttons
-     ============================================================ */
-  function initMagneticButtons() {
-    if (isTouch) return;
-    document.querySelectorAll(".btn--magnetic").forEach((btn) => {
-      btn.addEventListener("mousemove", (e) => {
-        const b = btn.getBoundingClientRect();
-        const x = (e.clientX - b.left - b.width / 2) * 0.3;
-        const y = (e.clientY - b.top - b.height / 2) * 0.5;
-        btn.style.transform = `translate(${x}px, ${y}px)`;
-      });
-      btn.addEventListener("mouseleave", () => {
-        btn.style.transform = "translate(0, 0)";
-      });
-    });
-  }
-  initMagneticButtons();
-
-  /* ============================================================
-     3D tilt on glass cards
-     ============================================================ */
-  function initTilt() {
-    if (isTouch) return;
-    document.querySelectorAll("[data-tilt]").forEach((card) => {
-      card.addEventListener("mousemove", (e) => {
-        const b = card.getBoundingClientRect();
-        const cx = (e.clientX - b.left) / b.width - 0.5;
-        const cy = (e.clientY - b.top) / b.height - 0.5;
-        card.style.transform = `perspective(800px) rotateX(${cy * -7}deg) rotateY(${cx * 7}deg)`;
-      });
-      card.addEventListener("mouseleave", () => {
-        card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg)";
-      });
-    });
-  }
-  initTilt();
-
- /* ============================================================
-     Three.js Engine Integration (Bulletproof Version)
+     Three.js 3D Engine Integration
      ============================================================ */
   function initThreeDScenes() {
-    // Check if Three.js is actually loaded in the browser first
     if (typeof THREE === 'undefined') {
-      console.error("Three.js failed to load from the CDN.");
+      console.error("Three.js Core Library is missing. Please verify the CDN script tag in index.html.");
       return;
     }
 
-    const textureLoader = new THREE.TextureLoader();
-    let ballGraphic = null;
-
-    // Safely attempt to load the texture
-    try {
-      ballGraphic = textureLoader.load(
-        'BEC70532-6ACA-4C33-A074-09634343F514 (1).JPG',
-        () => console.log("Texture loaded successfully!"),
-        undefined,
-        (err) => console.warn("Texture failed to load. Using procedural fallback color.", err)
-      );
-    } catch (e) {
-      console.warn("Texture loading thrown error, bypassing:", e);
-    }
-
-    // Procedural micro-pebbled leather texture mapping generator
-    const generateLeatherBump = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#808080';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < 35000; i++) {
-          const x = Math.random() * canvas.width;
-          const y = Math.random() * canvas.height;
-          ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#3a3a3a';
-          ctx.fillRect(x, y, 1, 1);
-        }
-        const bumpTex = new THREE.CanvasTexture(canvas);
-        bumpTex.wrapS = THREE.RepeatWrapping;
-        bumpTex.wrapT = THREE.RepeatWrapping;
-        bumpTex.repeat.set(6, 3);
-        return bumpTex;
-      } catch (e) {
-        console.error("Failed to generate bump map:", e);
-        return null;
+    // 1. Generate a procedural pebbled leather texture directly in code (eliminates file loading errors)
+    const createPebbledTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base midtone grey for normal/bump map mapping
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw high-density micro-pebbles
+      for (let i = 0; i < 40000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 1.5 + 0.5;
+        ctx.fillStyle = Math.random() > 0.5 ? '#9a9a9a' : '#666666';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
       }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(4, 4);
+      return texture;
     };
 
-    const sharedBump = generateLeatherBump();
+    const leatherBumpMap = createPebbledTexture();
 
-    function setupInstance(canvasId, scaleFactor) {
+    // 2. Instance builder function
+    function createBallInstance(canvasId, scale) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) return null;
 
-      const parent = canvas.parentElement;
-      if (!parent || parent.clientWidth === 0 || parent.clientHeight === 0) {
-        console.warn(`Canvas parent for #${canvasId} has 0 width or height. Check layout spacing.`);
-      }
+      const container = canvas.parentElement;
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || 450;
 
-      try {
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(40, parent.clientWidth / (parent.clientHeight || 1), 0.1, 100);
-        camera.position.z = 7;
+      // Scene setup
+      const scene = new THREE.Scene();
+      
+      // Camera Setup
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.z = 6.5;
 
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-        renderer.setSize(parent.clientWidth, parent.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      // Renderer Setup
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Dual Studio Lighting setups for leather depth highlights
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        keyLight.position.set(6, 5, 4);
-        scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0x3b5998, 0.5);
-        fillLight.position.set(-6, -3, 2);
-        scene.add(fillLight);
+      // Dynamic Athletic Lighting Configuration
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
 
-        const geometry = new THREE.SphereGeometry(2.1 * scaleFactor, 64, 64);
-        const material = new THREE.MeshStandardMaterial({
-          color: 0x1a365d, // Deep premium athletic blue base color fallback
-          map: ballGraphic,
-          bumpMap: sharedBump,
-          bumpScale: 0.015,
-          roughness: 0.6,
-          metalness: 0.1
-        });
+      const highKeyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      highKeyLight.position.set(5, 5, 4);
+      scene.add(highKeyLight);
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.rotation.x = 0.25;
-        mesh.rotation.z = -0.05;
-        scene.add(mesh);
+      const rimBlueLight = new THREE.DirectionalLight(0x00e5ff, 0.5);
+      rimBlueLight.position.set(-5, -3, -2);
+      scene.add(rimBlueLight);
 
-        return { scene, camera, renderer, mesh, parent };
-      } catch (err) {
-        console.error(`Error configuring Three.js instance for #${canvasId}:`, err);
-        return null;
-      }
+      // Sphere Setup (Athletic Tech-Blue Basketball Base)
+      const geometry = new THREE.SphereGeometry(1.8 * scale, 64, 64);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x112b56, // Deep vibrant core athletic blue
+        bumpMap: leatherBumpMap,
+        bumpScale: 0.015,
+        roughness: 0.45,
+        metalness: 0.1
+      });
+
+      const ballMesh = new THREE.Mesh(geometry, material);
+      
+      // Slightly tilt toward camera for professional display alignment
+      ballMesh.rotation.x = 0.3;
+      ballMesh.rotation.z = -0.1;
+      scene.add(ballMesh);
+
+      return { canvas, container, scene, camera, renderer, ballMesh };
     }
 
-    const instances = [
-      setupInstance('heroCanvas', 1.1),
-      setupInstance('productCanvas', 0.9)
+    // Initialize targets
+    const renderTargets = [
+      createBallInstance('heroCanvas', 1.1),
+      createBallInstance('productCanvas', 0.95)
     ].filter(Boolean);
 
-    if (instances.length === 0) {
-      console.warn("No valid 3D canvas elements initialized.");
-      return;
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      instances.forEach(inst => {
-        if (inst.mesh) {
-          inst.mesh.rotation.y += prefersReducedMotion ? 0 : 0.0035;
+    // 3. Continuous Animation Rendering Loop
+    function frameLoop() {
+      requestAnimationFrame(frameLoop);
+      
+      renderTargets.forEach(target => {
+        if (!prefersReducedMotion) {
+          target.ballMesh.rotation.y += 0.004; // Smooth, continuous steady tracking rotation
         }
-        if (inst.renderer && inst.scene && inst.camera) {
-          inst.renderer.render(inst.scene, inst.camera);
-        }
+        target.renderer.render(target.scene, target.camera);
       });
     }
-    animate();
+    
+    if (renderTargets.length > 0) {
+      frameLoop();
+    }
 
+    // 4. Responsive Viewport Recalculation Handler
     window.addEventListener('resize', () => {
-      instances.forEach(inst => {
-        if (!inst.parent || !inst.camera || !inst.renderer) return;
-        inst.camera.aspect = inst.parent.clientWidth / (inst.parent.clientHeight || 1);
-        inst.camera.updateProjectionMatrix();
-        inst.renderer.setSize(inst.parent.clientWidth, inst.parent.clientHeight);
+      renderTargets.forEach(target => {
+        const w = target.container.clientWidth || window.innerWidth;
+        const h = target.container.clientHeight || 450;
+        
+        target.camera.aspect = w / h;
+        target.camera.updateProjectionMatrix();
+        target.renderer.setSize(w, h);
       });
     });
   }
 
-  // Bind 3D viewports directly into your execution pipeline
+  // Trigger setup logic safely depending on execution state
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', initThreeDScenes);
   } else {
     initThreeDScenes();
   }
+
+})();
